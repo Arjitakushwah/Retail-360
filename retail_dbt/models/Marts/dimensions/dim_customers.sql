@@ -21,11 +21,9 @@ region as (
 )
 
 select
-<<<<<<< HEAD
+
     {{ dbt_utils.generate_surrogate_key(['c.customer_id'])}} as customer_sk,
-=======
-    {{ dbt_utils.generate_surrogate_key(['customer_id']) }} as customer_sk,
->>>>>>> 689a214826d7cd5b4e66b70bb1b98df6b6da3088
+
     c.customer_id,
     c.customer_name,
     c.address,
