@@ -1,8 +1,8 @@
 WITH source AS (
 select
-    L_ORDERKEY       as order_key,
-    L_PARTKEY        as part_key,
-    L_SUPPKEY        as supplier_key,
+    L_ORDERKEY       as order_id,
+    L_PARTKEY        as part_id,
+    L_SUPPKEY        as supplier_id,
     L_LINENUMBER     as line_number,
     L_QUANTITY       as quantity,
     L_EXTENDEDPRICE  as extended_price,
