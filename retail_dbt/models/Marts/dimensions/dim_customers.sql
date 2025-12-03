@@ -21,7 +21,9 @@ region as (
 )
 
 select
-    {{ dbt_utils.generate_surrogate_key(['customer_id']) }} as customer_sk,
+
+    {{ dbt_utils.generate_surrogate_key(['c.customer_id'])}} as customer_sk,
+
     c.customer_id,
     c.customer_name,
     c.address,
@@ -35,7 +37,7 @@ select
     true as current_flag
 from current_customer c
 left join nation n
-    on c.nation_key = n.nation_id
+    on c.nation_id = n.nation_id
 left join region r
     on n.region_id = r.region_id
 
