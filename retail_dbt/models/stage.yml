@@ -1,0 +1,175 @@
+version: 2
+
+models:
+
+  - name: stg_customer
+    description: "Staging model cleaning up raw customer data from TPC-H source."
+    columns:
+      - name: customer_id  
+        description: '{{ doc("Primary_Key") }} Unique identifier for the customer.'
+        data_tests:
+          - unique
+          - not_null
+      
+      - name: customer_name          
+        description: "Customer full name."
+        data_tests:
+          - not_null
+
+      - name: nation_id
+        description: '{{ doc("Foreign_Key") }} FK to the Nation table.'
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_nation')
+              field: nation_id
+
+      - name: market_segment 
+        description: "The market segment the customer belongs to."
+        data_tests:
+          - accepted_values:
+              values: ['AUTOMOBILE', 'BUILDING', 'FURNITURE', 'MACHINERY', 'HOUSEHOLD']
+              quote: true
+
+      - name: account_balance 
+        description: "Current account balance of the customer."
+
+  - name: stg_orders
+    description: "Staging model for all sales orders."
+    columns:
+      - name: order_id   
+        description: '{{ doc("Primary_Key") }}'
+        data_tests:
+          - unique
+          - not_null
+
+      - name: customer_id  
+        description: '{{ doc("Foreign_Key") }} Link to the customer who placed the order.'
+        data_tests:
+          - relationships:
+              to: ref('stg_customer')
+              field: customer_id
+
+      - name: order_status  
+        description: "Current status of the order (Open, Filled, Partial)."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['O', 'F', 'P'] 
+
+      - name: total_price   
+        description: "Total value of the order."
+        data_tests:
+          - not_null
+
+      - name: order_date    
+        description: "Date the order was placed."
+        data_tests:
+          - not_null
+
+  - name: stg_lineitem
+    description: "Detailed items for every order. Granularity is Order + Line Number."
+    columns:
+      - name: order_id     # Maps to L_ORDERKEY
+        description: '{{ doc("Foreign_Key") }} Parent order key.'
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+
+      - name: part_id    # Maps to L_PARTKEY
+        description: '{{ doc("Foreign_Key") }} The product being ordered.'
+        data_tests:
+          - relationships:
+              to: ref('stg_part')
+              field: part_id
+
+      - name: supplier_id 
+        description: '{{ doc("Foreign_Key") }} The supplier fulfilling this item.'
+        data_tests:
+          - relationships:
+              to: ref('stg_supplier')
+              field: supplier_id
+
+      - name: line_number   
+        description: "Unique index of the item within the order."
+        data_tests:
+          - not_null
+
+      - name: return_flag  
+        description: "Flag indicating if item was returned."
+        data_tests:
+          - accepted_values:
+              values: ['R', 'A', 'N'] 
+
+      - name: quantity      
+        description: "Quantity ordered."
+        data_tests:
+          - not_null
+          
+  - name: stg_part
+    description: "Catalog of parts available for sale."
+    columns:
+      - name: part_id
+        data_tests:
+          - unique
+          - not_null
+      - name: name
+        data_tests:
+          - not_null
+
+
+  - name: stg_supplier
+    description: "Suppliers who provide parts."
+    columns:
+      - name: supplier_id
+        data_tests:
+          - unique
+          - not_null
+      - name: nation_id
+        data_tests:
+          - relationships:
+              to: ref('stg_nation')
+              field: nation_id
+
+
+  - name: stg_partsupp
+    description: "Junction table linking Parts to Suppliers with available quantity."
+    columns:
+      - name: part_id
+        data_tests:
+          - relationships:
+              to: ref('stg_part')
+              field: part_id
+      - name: supplier_id
+        data_tests:
+          - relationships:
+              to: ref('stg_supplier')
+              field: supplier_id
+      - name: cost
+        data_tests:
+          - not_null
+
+  - name: stg_nation
+    config:
+      contract:
+        enforced: false
+    columns:
+      - name: nation_id
+        data_tests: [unique, not_null]
+      - name: region_id
+        data_tests:
+          - relationships:
+              to: ref('stg_region')
+              field: region_id
+
+ 
+  - name: stg_region
+    columns:
+      - name: region_id
+        data_tests: [unique, not_null]
+      - name: name
+        data_tests:
+          - accepted_values:
+              values: ['AFRICA', 'AMERICA', 'ASIA', 'EUROPE', 'MIDDLE EAST']
