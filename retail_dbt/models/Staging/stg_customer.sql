@@ -8,7 +8,7 @@ WITH source AS (
     C_ACCTBAL      as account_balance,
     trim(C_MKTSEGMENT) as market_segment,
     trim(C_COMMENT)    as comment
-    FROM {{ source('raw', 'customer') }}
+    FROM {{ source('src', 'customer') }}
 )
 
 SELECT * FROM source
