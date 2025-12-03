@@ -16,13 +16,13 @@ models:
         data_tests:
           - not_null
 
-      - name: nation_key    
+      - name: nation_id
         description: '{{ doc("Foreign_Key") }} FK to the Nation table.'
         data_tests:
           - not_null
           - relationships:
               to: ref('stg_nation')
-              field: nation_key
+              field: nation_id
 
       - name: market_segment 
         description: "The market segment the customer belongs to."
@@ -70,7 +70,7 @@ models:
   - name: stg_lineitem
     description: "Detailed items for every order. Granularity is Order + Line Number."
     columns:
-      - name: order_key     # Maps to L_ORDERKEY
+      - name: order_id     # Maps to L_ORDERKEY
         description: '{{ doc("Foreign_Key") }} Parent order key.'
         data_tests:
           - not_null
@@ -78,12 +78,12 @@ models:
               to: ref('stg_orders')
               field: order_id
 
-      - name: part_key      # Maps to L_PARTKEY
+      - name: part_id    # Maps to L_PARTKEY
         description: '{{ doc("Foreign_Key") }} The product being ordered.'
         data_tests:
           - relationships:
               to: ref('stg_part')
-              field: part_key
+              field: part_id
 
       - name: supplier_id 
         description: '{{ doc("Foreign_Key") }} The supplier fulfilling this item.'
@@ -111,7 +111,7 @@ models:
   - name: stg_part
     description: "Catalog of parts available for sale."
     columns:
-      - name: part_key
+      - name: part_id
         data_tests:
           - unique
           - not_null
@@ -156,7 +156,7 @@ models:
       contract:
         enforced: false
     columns:
-      - name: nation_key
+      - name: nation_id
         data_tests: [unique, not_null]
       - name: region_id
         data_tests:
