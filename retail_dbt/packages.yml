@@ -1,0 +1,16 @@
+packages:
+  # Core utility macros for surrogate keys, pivoting, union_relations, date_spine, etc.
+  - package: dbt-labs/dbt_utils
+    version: 1.1.1
+
+  # Optional: Testing framework with additional tests
+  - package: calogica/dbt_expectations
+    version: 0.10.1
+
+  # Optional: For better documentation, model exposure, and governance
+  - package: calogica/dbt_date
+    version: 0.10.2
+
+  # Optional: Great old package for metrics/layering if needed
+  - package: dbt-labs/dbt_metrics
+    version: 1.4.0
