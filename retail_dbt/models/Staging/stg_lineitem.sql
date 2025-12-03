@@ -17,6 +17,6 @@ select
     trim(L_SHIPMODE)     as ship_mode,
     trim(L_COMMENT)      as comment
 
-from {{ source('raw', 'lineitem') }})
+from {{ source('src', 'lineitem') }})
 
 select * from source

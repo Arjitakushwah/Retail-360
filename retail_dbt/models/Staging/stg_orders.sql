@@ -10,7 +10,7 @@ WITH source AS (
         TRIM(O_CLERK)              AS clerk,
         O_SHIPPRIORITY::INTEGER    AS ship_priority,
         TRIM(O_COMMENT)            AS comment
-    FROM {{ source('raw', 'orders') }}
+    FROM {{ source('src', 'orders') }}
 
 )
 
