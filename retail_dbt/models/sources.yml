@@ -1,0 +1,79 @@
+version: 2
+
+sources:
+  - name: src
+    description: "Snowflake data used as source for the Retail360 Data Warehouse."
+    database: retail360
+    schema: raw
+    tables:
+      - name: customer
+        description: "Customer master data"
+        columns:
+          - name: C_CUSTKEY
+            description: "Customer key"
+            tests:
+              - not_null
+              - unique
+
+      - name: orders
+        description: "Orders placed by customers"
+        columns:
+          - name: O_ORDERKEY
+            tests:
+              - not_null
+              - unique
+          - name: O_CUSTKEY
+            tests:
+              - not_null
+
+      - name: lineitem
+        description: "Order line-level details"
+        columns:
+          - name: L_ORDERKEY
+            tests:
+              - not_null
+          - name: L_LINENUMBER
+            tests:
+              - not_null
+
+      - name: part
+        description: "Product/part master"
+        columns:
+          - name: P_PARTKEY
+            tests:
+              - not_null
+              - unique
+
+      - name: partsupp
+        description: "Supplier and part relationships"
+        columns:
+          - name: PS_PARTKEY
+            tests:
+              - not_null
+          - name: PS_SUPPKEY
+            tests:
+              - not_null
+
+      - name: supplier
+        description: "Supplier details"
+        columns:
+          - name: S_SUPPKEY
+            tests:
+              - not_null
+              - unique
+
+      - name: nation
+        description: "Country/nation metadata"
+        columns:
+          - name: N_NATIONKEY
+            tests:
+              - not_null
+              - unique
+
+      - name: region
+        description: "Region metadata"
+        columns:
+          - name: R_REGIONKEY
+            tests:
+              - not_null
+              - unique
