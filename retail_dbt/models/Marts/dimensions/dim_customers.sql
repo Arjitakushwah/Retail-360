@@ -1,4 +1,4 @@
-{{ config(materialized='table', schema='marts') }}
+{{ config(materialized='table', schema='MARTS') }}
 
 with hist as (
     select * from {{ ref('customer_scd2') }}
