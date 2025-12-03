@@ -1,7 +1,7 @@
 {% snapshot customer_scd2 %}
 {{
   config(
-    target_schema='MARTS',          
+    target_schema='SNAPS',          
     unique_key='customer_id',      
     strategy='check',
     check_cols=[

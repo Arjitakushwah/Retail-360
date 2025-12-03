@@ -1,5 +1,5 @@
 {{ config (
-    materialized = 'table', schema = 'marts'
+    materialized = 'table', schema = 'MARTS'
 )}}
 
 with supplier as (
