@@ -85,13 +85,6 @@ models:
               to: ref('stg_part')
               field: part_id
 
-      - name: supplier_id 
-        description: '{{ doc("Foreign_Key") }} The supplier fulfilling this item.'
-        data_tests:
-          - relationships:
-              to: ref('stg_supplier')
-              field: supplier_id
-
       - name: line_number   
         description: "Unique index of the item within the order."
         data_tests:
