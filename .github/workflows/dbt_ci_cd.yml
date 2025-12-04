@@ -16,12 +16,14 @@ on:
 jobs:
   dbt_ci_tests:
     runs-on: ubuntu-latest
-    # Set the working directory for all subsequent steps in this job
+    # Set the working directory for all subsequent steps in this job (Steps 1, 2, 3)
     defaults:
       run:
         working-directory: retail_dbt # <--- IMPORTANT: All dbt commands run from this folder.
     env:
-      # REMOVED: DBT_PROFILES_DIR environment variable to allow 'working-directory' to dictate the project path.
+      # Reintroducing DBT_PROFILES_DIR to tell dbt exactly where the profile is located.
+      # This points to a directory *inside* the retail_dbt folder.
+      DBT_PROFILES_DIR: ./.dbt 
       # The database name for CI/CD runs to prevent conflicts (e.g., using a branch name)
       DBT_TARGET_SCHEMA: ci_${{ github.head_ref || github.sha }}
 
@@ -44,12 +46,10 @@ jobs:
 
       - name: Configure dbt profiles.yml
         # Creates a profiles.yml file using GitHub Secrets for secure connection details.
-        # It creates the .dbt folder at the root of the repository, but dbt is configured to look inside
-        # the 'retail_dbt' directory via the 'working-directory' setting, so we must explicitly
-        # place the profiles.yml file *there*.
+        # NOTE: This step must explicitly navigate to the retail_dbt directory for file creation,
+        # as 'working-directory' is only applied to the steps below this.
         run: |
           # 1. Create the .dbt directory inside retail_dbt
-          # NOTE: The working-directory is NOT applied to this run block, so we use the full path.
           mkdir -p retail_dbt/.dbt
           
           # 2. Write the profiles.yml content to the correct path
@@ -63,14 +63,14 @@ jobs:
           echo "      password: ${{ secrets.SNOWFLAKE_PASSWORD }}" >> retail_dbt/.dbt/profiles.yml
           echo "      role: ${{ secrets.SNOWFLAKE_ROLE }}" >> retail_dbt/.dbt/profiles.yml
           echo "      warehouse: ${{ secrets.SNOWFLAKE_WAREHOUSE }}" >> retail_dbt/.dbt/profiles.yml
-          echo "      database: RETAIL360" >> retail_dbt/.dbt/profiles.yml # Use your main database name
+          echo "      database: RETAIL360_DB" >> retail_dbt/.dbt/profiles.yml # Use your main database name
           echo "      schema: ${{ env.DBT_TARGET_SCHEMA }}" >> retail_dbt/.dbt/profiles.yml # Dynamic schema for isolation
           echo "      threads: 4" >> retail_dbt/.dbt/profiles.yml
           echo "      client_session_keep_alive: False" >> retail_dbt/.dbt/profiles.yml
 
       - name: 1. dbt debug (Check Connection)
         # dbt debug is now run from inside the retail_dbt directory
-        # dbt will now look for dbt_project.yml and profiles.yml in the current working directory (retail_dbt).
+        # dbt will use the DBT_PROFILES_DIR env var, which points to './.dbt' (i.e., retail_dbt/.dbt).
         run: dbt debug --target ci
 
       - name: 2. dbt run (Compile and Build Models)
