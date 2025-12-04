@@ -18,6 +18,7 @@ region as (
 )
 
 select 
+    {{ dbt_utils.generate_surrogate_key(['s.supplier_id']) }} as supplier_sk,
     s.supplier_id,
     s.name,
     s.account_balance,
