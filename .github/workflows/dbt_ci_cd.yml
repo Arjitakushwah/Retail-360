@@ -22,8 +22,7 @@ jobs:
         working-directory: retail_dbt # <--- IMPORTANT: All dbt commands run from this folder.
     env:
       # Set DBT_PROFILES_DIR to point to the location of your profiles.yml
-      # The .dbt folder is often used in the home directory, but can be customized.
-      # Note: This path is now relative to the working-directory (retail_dbt/.dbt)
+      # This path tells dbt where to look for the configuration file.
       DBT_PROFILES_DIR: ${{ github.workspace }}/retail_dbt/.dbt 
       # The database name for CI/CD runs to prevent conflicts (e.g., using a branch name)
       DBT_TARGET_SCHEMA: ci_${{ github.head_ref || github.sha }}
@@ -46,27 +45,27 @@ jobs:
           pip install dbt-snowflake  # Replace with dbt-bigquery, dbt-postgres, etc., if needed
 
       - name: Configure dbt profiles.yml
-        # Creates a profiles.yml file using GitHub Secrets for secure connection details
-        # The profile name 'retail_dbt' now correctly matches the 'profile:' entry in your dbt_project.yml file.
-        # Ensure you have the following secrets configured in your GitHub repository:
-        # SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, SNOWFLAKE_PASSWORD, SNOWFLAKE_ROLE, SNOWFLAKE_WAREHOUSE
+        # Creates a profiles.yml file using GitHub Secrets for secure connection details.
+        # We explicitly target the 'retail_dbt' subdirectory to place the .dbt folder correctly.
         run: |
-          # Use the full path for mkdir -p and echo redirect since the shell is still technically outside the dbt folder
-          mkdir -p .dbt
-          echo "retail_dbt:" > .dbt/profiles.yml # <--- CORRECTED PROFILE NAME
-          echo "  target: ci" >> .dbt/profiles.yml
-          echo "  outputs:" >> .dbt/profiles.yml
-          echo "    ci:" >> .dbt/profiles.yml
-          echo "      type: snowflake" >> .dbt/profiles.yml
-          echo "      account: ${{ secrets.SNOWFLAKE_ACCOUNT }}" >> .dbt/profiles.yml
-          echo "      user: ${{ secrets.SNOWFLAKE_USER }}" >> .dbt/profiles.yml
-          echo "      password: ${{ secrets.SNOWFLAKE_PASSWORD }}" >> .dbt/profiles.yml
-          echo "      role: ${{ secrets.SNOWFLAKE_ROLE }}" >> .dbt/profiles.yml
-          echo "      warehouse: ${{ secrets.SNOWFLAKE_WAREHOUSE }}" >> .dbt/profiles.yml
-          echo "      database: RETAIL360_DB" >> .dbt/profiles.yml # Use your main database name
-          echo "      schema: ${{ env.DBT_TARGET_SCHEMA }}" >> .dbt/profiles.yml # Dynamic schema for isolation
-          echo "      threads: 4" >> .dbt/profiles.yml
-          echo "      client_session_keep_alive: False" >> .dbt/profiles.yml
+          # 1. Create the .dbt directory inside retail_dbt
+          mkdir -p retail_dbt/.dbt
+          
+          # 2. Write the profiles.yml content to the correct path
+          echo "retail_dbt:" > retail_dbt/.dbt/profiles.yml # <--- CORRECTED PATH
+          echo "  target: ci" >> retail_dbt/.dbt/profiles.yml
+          echo "  outputs:" >> retail_dbt/.dbt/profiles.yml
+          echo "    ci:" >> retail_dbt/.dbt/profiles.yml
+          echo "      type: snowflake" >> retail_dbt/.dbt/profiles.yml
+          echo "      account: ${{ secrets.SNOWFLAKE_ACCOUNT }}" >> retail_dbt/.dbt/profiles.yml
+          echo "      user: ${{ secrets.SNOWFLAKE_USER }}" >> retail_dbt/.dbt/profiles.yml
+          echo "      password: ${{ secrets.SNOWFLAKE_PASSWORD }}" >> retail_dbt/.dbt/profiles.yml
+          echo "      role: ${{ secrets.SNOWFLAKE_ROLE }}" >> retail_dbt/.dbt/profiles.yml
+          echo "      warehouse: ${{ secrets.SNOWFLAKE_WAREHOUSE }}" >> retail_dbt/.dbt/profiles.yml
+          echo "      database: RETAIL360_DB" >> retail_dbt/.dbt/profiles.yml # Use your main database name
+          echo "      schema: ${{ env.DBT_TARGET_SCHEMA }}" >> retail_dbt/.dbt/profiles.yml # Dynamic schema for isolation
+          echo "      threads: 4" >> retail_dbt/.dbt/profiles.yml
+          echo "      client_session_keep_alive: False" >> retail_dbt/.dbt/profiles.yml
 
       - name: 1. dbt debug (Check Connection)
         # dbt debug is now run from inside the retail_dbt directory
