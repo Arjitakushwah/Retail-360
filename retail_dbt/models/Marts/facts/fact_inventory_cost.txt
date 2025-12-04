@@ -20,8 +20,10 @@ supplier_dim as (
 
 select
     {{ dbt_utils.generate_surrogate_key(['ps.part_id','ps.supplier_id']) }} as inventory_cost_sk,
-    pd.part_id,
-    sd.supplier_id,
+    ps.part_id,
+    ps.supplier_id,
+    pd.product_sk,
+    sd.supplier_sk,
     ps.cost,
     ps.available_quantity
 from ps
