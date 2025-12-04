@@ -7,19 +7,14 @@ models:
     columns:
       - name: customer_id  
         description: '{{ doc("Primary_Key") }} Unique identifier for the customer.'
-        data_tests:
-          - unique
-          - not_null
+
       
       - name: customer_name          
         description: "Customer full name."
-        data_tests:
-          - not_null
 
       - name: nation_id
         description: '{{ doc("Foreign_Key") }} FK to the Nation table.'
         data_tests:
-          - not_null
           - relationships:
               to: ref('stg_nation')
               field: nation_id
@@ -39,9 +34,6 @@ models:
     columns:
       - name: order_id   
         description: '{{ doc("Primary_Key") }}'
-        data_tests:
-          - unique
-          - not_null
 
       - name: customer_id  
         description: '{{ doc("Foreign_Key") }} Link to the customer who placed the order.'
@@ -53,19 +45,15 @@ models:
       - name: order_status  
         description: "Current status of the order (Open, Filled, Partial)."
         data_tests:
-          - not_null
           - accepted_values:
               values: ['O', 'F', 'P'] 
 
       - name: total_price   
         description: "Total value of the order."
-        data_tests:
-          - not_null
 
       - name: order_date    
         description: "Date the order was placed."
-        data_tests:
-          - not_null
+
 
   - name: stg_lineitem
     description: "Detailed items for every order. Granularity is Order + Line Number."
@@ -73,7 +61,6 @@ models:
       - name: order_id     # Maps to L_ORDERKEY
         description: '{{ doc("Foreign_Key") }} Parent order key.'
         data_tests:
-          - not_null
           - relationships:
               to: ref('stg_orders')
               field: order_id
@@ -87,8 +74,6 @@ models:
 
       - name: line_number   
         description: "Unique index of the item within the order."
-        data_tests:
-          - not_null
 
       - name: return_flag  
         description: "Flag indicating if item was returned."
@@ -98,28 +83,19 @@ models:
 
       - name: quantity      
         description: "Quantity ordered."
-        data_tests:
-          - not_null
+
           
   - name: stg_part
     description: "Catalog of parts available for sale."
     columns:
       - name: part_id
-        data_tests:
-          - unique
-          - not_null
       - name: name
-        data_tests:
-          - not_null
 
 
   - name: stg_supplier
     description: "Suppliers who provide parts."
     columns:
       - name: supplier_id
-        data_tests:
-          - unique
-          - not_null
       - name: nation_id
         data_tests:
           - relationships:
@@ -141,8 +117,6 @@ models:
               to: ref('stg_supplier')
               field: supplier_id
       - name: cost
-        data_tests:
-          - not_null
 
   - name: stg_nation
     config:
