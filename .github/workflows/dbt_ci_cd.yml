@@ -16,10 +16,15 @@ on:
 jobs:
   dbt_ci_tests:
     runs-on: ubuntu-latest
+    # Set the working directory for all subsequent steps in this job
+    defaults:
+      run:
+        working-directory: retail_dbt # <--- IMPORTANT: All dbt commands run from this folder.
     env:
       # Set DBT_PROFILES_DIR to point to the location of your profiles.yml
       # The .dbt folder is often used in the home directory, but can be customized.
-      DBT_PROFILES_DIR: ${{ github.workspace }}/.dbt
+      # Note: This path is now relative to the working-directory (retail_dbt/.dbt)
+      DBT_PROFILES_DIR: ${{ github.workspace }}/retail_dbt/.dbt 
       # The database name for CI/CD runs to prevent conflicts (e.g., using a branch name)
       DBT_TARGET_SCHEMA: ci_${{ github.head_ref || github.sha }}
 
@@ -42,11 +47,13 @@ jobs:
 
       - name: Configure dbt profiles.yml
         # Creates a profiles.yml file using GitHub Secrets for secure connection details
+        # The profile name 'retail_dbt' now correctly matches the 'profile:' entry in your dbt_project.yml file.
         # Ensure you have the following secrets configured in your GitHub repository:
         # SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, SNOWFLAKE_PASSWORD, SNOWFLAKE_ROLE, SNOWFLAKE_WAREHOUSE
         run: |
+          # Use the full path for mkdir -p and echo redirect since the shell is still technically outside the dbt folder
           mkdir -p .dbt
-          echo "retail360_dbt_project:" > .dbt/profiles.yml
+          echo "retail_dbt:" > .dbt/profiles.yml # <--- CORRECTED PROFILE NAME
           echo "  target: ci" >> .dbt/profiles.yml
           echo "  outputs:" >> .dbt/profiles.yml
           echo "    ci:" >> .dbt/profiles.yml
@@ -62,23 +69,17 @@ jobs:
           echo "      client_session_keep_alive: False" >> .dbt/profiles.yml
 
       - name: 1. dbt debug (Check Connection)
-        # Validates that dbt is installed and the connection to the warehouse works
+        # dbt debug is now run from inside the retail_dbt directory
         run: dbt debug --target ci
 
       - name: 2. dbt run (Compile and Build Models)
-        # Compiles the models and runs them against the isolated CI schema
-        # The 'ci' target and dynamic schema ensure production data is not affected.
+        # dbt run is now run from inside the retail_dbt directory
         run: dbt run --target ci
 
       - name: 3. dbt test (Validate Data Quality)
-        # Runs all schema tests (not_null, unique, accepted_values, etc.)
+        # dbt test is now run from inside the retail_dbt directory
         run: dbt test --target ci
 
       - name: Cleanup Temporary Schema (Optional but Recommended)
         if: always() # Run this step even if previous steps fail
-        # This step connects to Snowflake via SnowSQL or a simple Python script
-        # to drop the temporary schema created for this CI run.
-        # NOTE: For simplicity, this example uses a direct SQL command if possible,
-        # but in a real-world scenario, you might use a more robust cleanup script.
-        # This step requires setting up SnowSQL or another method to execute the DROP SCHEMA command.
         run: echo "Cleanup step to drop schema ${{ env.DBT_TARGET_SCHEMA }} goes here."
