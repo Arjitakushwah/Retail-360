@@ -1,0 +1,84 @@
+name: dbt CI/CD Pipeline
+
+on:
+  # Triggers the workflow on push or pull request events
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  dbt_ci_tests:
+    runs-on: ubuntu-latest
+    env:
+      # Set DBT_PROFILES_DIR to point to the location of your profiles.yml
+      # The .dbt folder is often used in the home directory, but can be customized.
+      DBT_PROFILES_DIR: ${{ github.workspace }}/.dbt
+      # The database name for CI/CD runs to prevent conflicts (e.g., using a branch name)
+      DBT_TARGET_SCHEMA: ci_${{ github.head_ref || github.sha }}
+
+    steps:
+      - name: Checkout Repository
+        # Checks out the dbt code from the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        # dbt runs on Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies (dbt-core and Snowflake adapter)
+        # Assuming you use the Snowflake adapter based on your project description
+        run: |
+          python -m pip install --upgrade pip
+          pip install dbt-snowflake  # Replace with dbt-bigquery, dbt-postgres, etc., if needed
+
+      - name: Configure dbt profiles.yml
+        # Creates a profiles.yml file using GitHub Secrets for secure connection details
+        # Ensure you have the following secrets configured in your GitHub repository:
+        # SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, SNOWFLAKE_PASSWORD, SNOWFLAKE_ROLE, SNOWFLAKE_WAREHOUSE
+        run: |
+          mkdir -p .dbt
+          echo "retail360_dbt_project:" > .dbt/profiles.yml
+          echo "  target: ci" >> .dbt/profiles.yml
+          echo "  outputs:" >> .dbt/profiles.yml
+          echo "    ci:" >> .dbt/profiles.yml
+          echo "      type: snowflake" >> .dbt/profiles.yml
+          echo "      account: ${{ secrets.SNOWFLAKE_ACCOUNT }}" >> .dbt/profiles.yml
+          echo "      user: ${{ secrets.SNOWFLAKE_USER }}" >> .dbt/profiles.yml
+          echo "      password: ${{ secrets.SNOWFLAKE_PASSWORD }}" >> .dbt/profiles.yml
+          echo "      role: ${{ secrets.SNOWFLAKE_ROLE }}" >> .dbt/profiles.yml
+          echo "      warehouse: ${{ secrets.SNOWFLAKE_WAREHOUSE }}" >> .dbt/profiles.yml
+          echo "      database: RETAIL360_DB" >> .dbt/profiles.yml # Use your main database name
+          echo "      schema: ${{ env.DBT_TARGET_SCHEMA }}" >> .dbt/profiles.yml # Dynamic schema for isolation
+          echo "      threads: 4" >> .dbt/profiles.yml
+          echo "      client_session_keep_alive: False" >> .dbt/profiles.yml
+
+      - name: 1. dbt debug (Check Connection)
+        # Validates that dbt is installed and the connection to the warehouse works
+        run: dbt debug --target ci
+
+      - name: 2. dbt run (Compile and Build Models)
+        # Compiles the models and runs them against the isolated CI schema
+        # The 'ci' target and dynamic schema ensure production data is not affected.
+        run: dbt run --target ci
+
+      - name: 3. dbt test (Validate Data Quality)
+        # Runs all schema tests (not_null, unique, accepted_values, etc.)
+        run: dbt test --target ci
+
+      - name: Cleanup Temporary Schema (Optional but Recommended)
+        if: always() # Run this step even if previous steps fail
+        # This step connects to Snowflake via SnowSQL or a simple Python script
+        # to drop the temporary schema created for this CI run.
+        # NOTE: For simplicity, this example uses a direct SQL command if possible,
+        # but in a real-world scenario, you might use a more robust cleanup script.
+        # This step requires setting up SnowSQL or another method to execute the DROP SCHEMA command.
+        run: echo "Cleanup step to drop schema ${{ env.DBT_TARGET_SCHEMA }} goes here."
