@@ -33,6 +33,6 @@ left join customer_dim cd
 {% if is_incremental() %}
 where o.order_date > (
     select max(order_date)
-    from {{ this }} f
+    from {{ this }} 
 )
 {% endif %}
