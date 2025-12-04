@@ -50,7 +50,7 @@ jobs:
                 password: ${{ secrets.SNOWFLAKE_PASSWORD }}
                 role: ${{ secrets.SNOWFLAKE_ROLE }}
                 warehouse: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
-                database: RETAIL360_DB
+                database: RETAIL360
                 schema: ${{ env.DBT_TARGET_SCHEMA }}
                 threads: 4
                 client_session_keep_alive: False
