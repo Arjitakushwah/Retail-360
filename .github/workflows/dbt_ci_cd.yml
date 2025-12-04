@@ -1,7 +1,6 @@
 name: dbt CI/CD Pipeline
 
 on:
-  # Triggers the workflow on push or pull request events
   push:
     branches:
       - main
@@ -10,77 +9,69 @@ on:
     branches:
       - main
       - dev
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
   dbt_ci_tests:
     runs-on: ubuntu-latest
-    # Set the working directory for all subsequent steps in this job (Steps 1, 2, 3)
     defaults:
       run:
-        working-directory: retail_dbt # <--- IMPORTANT: All dbt commands run from this folder.
+        working-directory: retail_dbt
     env:
-      # Reintroducing DBT_PROFILES_DIR to tell dbt exactly where the profile is located.
-      # This points to a directory *inside* the retail_dbt folder.
-      DBT_PROFILES_DIR: ./.dbt 
-      # The database name for CI/CD runs to prevent conflicts (e.g., using a branch name)
+      DBT_PROFILES_DIR: ./.dbt
       DBT_TARGET_SCHEMA: ci_${{ github.head_ref || github.sha }}
 
     steps:
       - name: Checkout Repository
-        # Checks out the dbt code from the repository
         uses: actions/checkout@v4
 
       - name: Set up Python
-        # dbt runs on Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - name: Install dependencies (dbt-core and Snowflake adapter)
-        # Assuming you use the Snowflake adapter based on your project description
         run: |
           python -m pip install --upgrade pip
-          pip install dbt-snowflake  # Replace with dbt-bigquery, dbt-postgres, etc., if needed
+          pip install dbt-snowflake
 
       - name: Configure dbt profiles.yml
-        # Creates a profiles.yml file using GitHub Secrets for secure connection details.
-        # NOTE: This step must explicitly navigate to the retail_dbt directory for file creation,
-        # as 'working-directory' is only applied to the steps below this.
+        # THIS IS THE FIX: Remove the working-directory override
+        # Since defaults.run.working-directory is set to retail_dbt,
+        # this step now runs from retail_dbt by default
         run: |
-          # 1. Create the .dbt directory inside retail_dbt
-          mkdir -p retail_dbt/.dbt
+          # 1. Create the .dbt directory (now relative to retail_dbt)
+          mkdir -p .dbt
           
-          # 2. Write the profiles.yml content to the correct path
-          echo "retail_dbt:" > retail_dbt/.dbt/profiles.yml 
-          echo "  target: ci" >> retail_dbt/.dbt/profiles.yml
-          echo "  outputs:" >> retail_dbt/.dbt/profiles.yml
-          echo "    ci:" >> retail_dbt/.dbt/profiles.yml
-          echo "      type: snowflake" >> retail_dbt/.dbt/profiles.yml
-          echo "      account: ${{ secrets.SNOWFLAKE_ACCOUNT }}" >> retail_dbt/.dbt/profiles.yml
-          echo "      user: ${{ secrets.SNOWFLAKE_USER }}" >> retail_dbt/.dbt/profiles.yml
-          echo "      password: ${{ secrets.SNOWFLAKE_PASSWORD }}" >> retail_dbt/.dbt/profiles.yml
-          echo "      role: ${{ secrets.SNOWFLAKE_ROLE }}" >> retail_dbt/.dbt/profiles.yml
-          echo "      warehouse: ${{ secrets.SNOWFLAKE_WAREHOUSE }}" >> retail_dbt/.dbt/profiles.yml
-          echo "      database: RETAIL360_DB" >> retail_dbt/.dbt/profiles.yml # Use your main database name
-          echo "      schema: ${{ env.DBT_TARGET_SCHEMA }}" >> retail_dbt/.dbt/profiles.yml # Dynamic schema for isolation
-          echo "      threads: 4" >> retail_dbt/.dbt/profiles.yml
-          echo "      client_session_keep_alive: False" >> retail_dbt/.dbt/profiles.yml
+          # 2. Write the profiles.yml content
+          cat > .dbt/profiles.yml <<EOF
+          retail_dbt:
+            target: ci
+            outputs:
+              ci:
+                type: snowflake
+                account: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+                user: ${{ secrets.SNOWFLAKE_USER }}
+                password: ${{ secrets.SNOWFLAKE_PASSWORD }}
+                role: ${{ secrets.SNOWFLAKE_ROLE }}
+                warehouse: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+                database: RETAIL360_DB
+                schema: ${{ env.DBT_TARGET_SCHEMA }}
+                threads: 4
+                client_session_keep_alive: False
+          EOF
 
       - name: 1. dbt debug (Check Connection)
-        # dbt debug is now run from inside the retail_dbt directory
-        # dbt will use the DBT_PROFILES_DIR env var, which points to './.dbt' (i.e., retail_dbt/.dbt).
         run: dbt debug --target ci
 
       - name: 2. dbt run (Compile and Build Models)
-        # dbt run is now run from inside the retail_dbt directory
         run: dbt run --target ci
 
       - name: 3. dbt test (Validate Data Quality)
-        # dbt test is now run from inside the retail_dbt directory
         run: dbt test --target ci
 
       - name: Cleanup Temporary Schema (Optional but Recommended)
-        if: always() # Run this step even if previous steps fail
-        run: echo "Cleanup step to drop schema ${{ env.DBT_TARGET_SCHEMA }} goes here."
+        if: always()
+        run: |
+          echo "To implement cleanup, add:"
+          echo "dbt run-operation drop_schema --args '{schema: ${{ env.DBT_TARGET_SCHEMA }}}'"
