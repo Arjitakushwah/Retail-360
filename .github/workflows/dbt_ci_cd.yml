@@ -36,14 +36,9 @@ jobs:
           pip install dbt-snowflake
 
       - name: Configure dbt profiles.yml
-        # THIS IS THE FIX: Remove the working-directory override
-        # Since defaults.run.working-directory is set to retail_dbt,
-        # this step now runs from retail_dbt by default
         run: |
-          # 1. Create the .dbt directory (now relative to retail_dbt)
           mkdir -p .dbt
           
-          # 2. Write the profiles.yml content
           cat > .dbt/profiles.yml <<EOF
           retail_dbt:
             target: ci
@@ -64,10 +59,14 @@ jobs:
       - name: 1. dbt debug (Check Connection)
         run: dbt debug --target ci
 
-      - name: 2. dbt run (Compile and Build Models)
+      # ADD THIS STEP - Install dbt packages
+      - name: 2. dbt deps (Install Package Dependencies)
+        run: dbt deps
+
+      - name: 3. dbt run (Compile and Build Models)
         run: dbt run --target ci
 
-      - name: 3. dbt test (Validate Data Quality)
+      - name: 4. dbt test (Validate Data Quality)
         run: dbt test --target ci
 
       - name: Cleanup Temporary Schema (Optional but Recommended)
