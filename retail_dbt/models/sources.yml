@@ -77,3 +77,15 @@ sources:
             tests:
               - not_null
               - unique
+  - name: marts
+    database: retail360
+    schema: marts
+    tables:
+      - name: dim_dates
+        description: "Contains the dimension dates with date key"
+        columns:
+          - name: date_key
+            description: "date key"
+            tests:
+              - not_null
+              - unique
