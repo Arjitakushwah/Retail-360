@@ -8,7 +8,8 @@ changed as (
         ps_suppkey as supplier_id,
         ps_availqty as available_quantity,
         ps_supplycost as cost,
-        ps_comment as comment    
+        ps_comment as comment,
+        rn as rn 
     from source
 )
 select * from changed
